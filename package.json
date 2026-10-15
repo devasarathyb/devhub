@@ -1,0 +1,32 @@
+{
+  "name": "devhub",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "devDependencies": {
+    "@nx/devkit": "23.3.0",
+    "@nx/esbuild": "23.3.0",
+    "@nx/js": "23.3.0",
+    "@nx/next": "23.3.0",
+    "@nx/node": "23.3.0",
+    "@nx/playwright": "23.3.0",
+    "@playwright/test": "^1.37.0",
+    "@swc-node/register": "~1.11.1",
+    "@swc/cli": "~0.8.1",
+    "@swc/core": "~1.15.5",
+    "@swc/helpers": "~0.5.18",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "esbuild": "^0.27.0",
+    "nx": "^23.3.0",
+    "tslib": "^2.3.0",
+    "typescript": "~6.0.3"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "next": "~16.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

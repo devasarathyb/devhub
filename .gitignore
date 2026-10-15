@@ -1,0 +1,13 @@
+﻿node_modules/
+dist/
+.nx/
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+
+# Next.js
+.next
+out
+test-output
