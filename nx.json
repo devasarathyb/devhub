@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "analytics": false,
+  "tui": {
+    "enabled": false
+  },
   "plugins": [
     {
       "plugin": "@nx/js/typescript",
