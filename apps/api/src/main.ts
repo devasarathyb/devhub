@@ -2,6 +2,7 @@ import express from 'express';
 import { config as loadEnv } from 'dotenv';
 import { resolve } from 'node:path';
 import { connectToDatabase } from './database';
+import authRouter from './routes/auth';
 import tasksRouter from './routes/tasks';
 
 loadEnv({ path: resolve(process.cwd(), 'apps/api/.env') });
@@ -11,7 +12,8 @@ const port = process.env.PORT || 3000;
 const app = express();
 
 app.use(express.json());
-app.use("/api/tasks", tasksRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/tasks', tasksRouter);
 
 
 app.get('/health', (req, res) => {
@@ -24,7 +26,9 @@ app.get('/health', (req, res) => {
 async function startServer() {
   try {
     console.log('Connecting to MongoDB...');
-    await connectToDatabase();
+    const db = await connectToDatabase();
+    await db.collection('users').createIndex({ email: 1 }, { unique: true });
+    await db.collection('sessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
     app.listen(port, () => {
       console.log(`API running at http://localhost:${port}`);

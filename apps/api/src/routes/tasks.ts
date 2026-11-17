@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { requireAuth } from '../auth';
 import { connectToDatabase } from '../database';
 import { ObjectId } from 'mongodb';
 
@@ -12,8 +13,16 @@ function isRequestBody(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+tasksRouter.use(requireAuth);
+
 tasksRouter.post('/', async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Please sign in to continue' });
+      return;
+    }
+
     if (!isRequestBody(req.body)) {
       res.status(400).json({ message: 'A JSON request body is required' });
       return;
@@ -33,6 +42,7 @@ tasksRouter.post('/', async (req, res) => {
     const db = await connectToDatabase();
     const normalizedTitle = title.trim();
     const duplicate = await db.collection('tasks').findOne({
+      userId,
       title: { $regex: `^${escapeRegExp(normalizedTitle)}$`, $options: 'i' },
     });
 
@@ -44,6 +54,7 @@ tasksRouter.post('/', async (req, res) => {
     const result = await db.collection('tasks').insertOne({
       title: normalizedTitle,
       completed,
+      userId,
       createdAt: new Date(),
     });
 
@@ -66,8 +77,14 @@ tasksRouter.post('/', async (req, res) => {
 
 tasksRouter.get('/', async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Please sign in to continue' });
+      return;
+    }
+
     const db = await connectToDatabase();
-    const tasks = await db.collection('tasks').find().toArray();
+    const tasks = await db.collection('tasks').find({ userId }).toArray();
     res.json({ tasks });
   } catch (error) {
     console.error('Error fetching tasks:', error);
@@ -77,6 +94,12 @@ tasksRouter.get('/', async (req, res) => {
 
 tasksRouter.patch('/:id', async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Please sign in to continue' });
+      return;
+    }
+
     const id = req.params.id;
     if (!ObjectId.isValid(id)) {
       res.status(400).json({ message: 'Invalid task ID' });
@@ -106,7 +129,7 @@ tasksRouter.patch('/:id', async (req, res) => {
 
     const db = await connectToDatabase();
     const taskId = new ObjectId(id);
-    const existingTask = await db.collection('tasks').findOne({ _id: taskId });
+    const existingTask = await db.collection('tasks').findOne({ _id: taskId, userId });
     if (!existingTask) {
       res.status(404).json({ message: 'Task not found' });
       return;
@@ -121,6 +144,7 @@ tasksRouter.patch('/:id', async (req, res) => {
     if (updates.title !== undefined) {
       const duplicate = await db.collection('tasks').findOne({
         _id: { $ne: taskId },
+        userId,
         title: { $regex: `^${escapeRegExp(updates.title)}$`, $options: 'i' },
       });
 
@@ -131,7 +155,7 @@ tasksRouter.patch('/:id', async (req, res) => {
     }
 
     const result = await db.collection('tasks').updateOne(
-      { _id: taskId },
+      { _id: taskId, userId },
       { $set: updates }
     );
 
@@ -149,6 +173,12 @@ tasksRouter.patch('/:id', async (req, res) => {
 
 tasksRouter.delete('/:id', async (req, res) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ message: 'Please sign in to continue' });
+      return;
+    }
+
     const id = req.params.id;
     if (!ObjectId.isValid(id)) {
       res.status(400).json({ message: 'Invalid task ID' });
@@ -156,7 +186,7 @@ tasksRouter.delete('/:id', async (req, res) => {
     }
 
     const db = await connectToDatabase();
-    const result = await db.collection('tasks').deleteOne({ _id: new ObjectId(id) });
+    const result = await db.collection('tasks').deleteOne({ _id: new ObjectId(id), userId });
 
     if (result.deletedCount === 0) {
       res.status(404).json({ message: 'Task not found' });

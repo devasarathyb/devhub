@@ -8,11 +8,21 @@ type Task = {
   completed: boolean;
 };
 
+type User = {
+  id: string;
+  email: string;
+};
+
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   const [pendingTaskAction, setPendingTaskAction] = useState<'updating' | 'deleting' | null>(null);
@@ -49,9 +59,81 @@ export default function Home() {
     }
   }
 
+  async function checkCurrentUser() {
+    try {
+      const response = await fetch('/api/auth/me', { cache: 'no-store' });
+      if (response.status === 401) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      if (!response.ok) {
+        setError(await getErrorMessage(response, 'Could not check your sign-in status.'));
+        setLoading(false);
+        return;
+      }
+
+      const data: { user: User } = await response.json();
+      setUser(data.user);
+      await loadTasks();
+    } catch {
+      setError('Could not connect to the server. Please try again.');
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    void loadTasks();
+    void checkCurrentUser();
   }, []);
+
+  async function submitAuth(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAuthLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/auth/${authMode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        setError(await getErrorMessage(response, 'Could not sign in. Please try again.'));
+        return;
+      }
+
+      const data: { user: User } = await response.json();
+      setUser(data.user);
+      setPassword('');
+      setLoading(true);
+      await loadTasks();
+    } catch {
+      setError('Could not connect to the server. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+  async function logout() {
+    setAuthLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/auth/logout', { method: 'POST' });
+      if (!response.ok) {
+        setError(await getErrorMessage(response, 'Could not sign out. Please try again.'));
+        return;
+      }
+
+      setUser(null);
+      setTasks([]);
+      setTitle('');
+    } catch {
+      setError('Could not connect to the server. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  }
 
   async function addTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -135,6 +217,67 @@ export default function Home() {
     <main style={{ maxWidth: 640, margin: '40px auto', padding: 20 }}>
       <h1>DevHub Tasks</h1>
 
+      {loading && <p>Loading...</p>}
+
+      {!loading && !user && (
+        <section>
+          <h2>{authMode === 'login' ? 'Sign in' : 'Create account'}</h2>
+          <form onSubmit={submitAuth} style={{ display: 'grid', gap: 12, maxWidth: 360 }}>
+            <label>
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                required
+                style={{ display: 'block', width: '100%', padding: 10 }}
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                minLength={8}
+                maxLength={128}
+                required
+                style={{ display: 'block', width: '100%', padding: 10 }}
+              />
+            </label>
+            <button type="submit" disabled={authLoading}>
+              {authLoading
+                ? 'Please wait...'
+                : authMode === 'login'
+                  ? 'Sign in'
+                  : 'Create account'}
+            </button>
+          </form>
+          <button
+            type="button"
+            disabled={authLoading}
+            onClick={() => {
+              setAuthMode(authMode === 'login' ? 'register' : 'login');
+              setError(null);
+            }}
+            style={{ marginTop: 12 }}
+          >
+            {authMode === 'login' ? 'Need an account? Register' : 'Already registered? Sign in'}
+          </button>
+        </section>
+      )}
+
+      {!loading && user && (
+        <>
+          <p>
+            Signed in as {user.email}{' '}
+            <button type="button" onClick={() => void logout()} disabled={authLoading}>
+              {authLoading ? 'Signing out...' : 'Sign out'}
+            </button>
+          </p>
+
       <form onSubmit={addTask} style={{ display: 'flex', gap: 8 }}>
         <input
           value={title}
@@ -149,7 +292,6 @@ export default function Home() {
       </form>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {loading && <p>Loading tasks...</p>}
 
       {!loading && !error && tasks.length === 0 && (
         <p>No tasks yet. Add one above to get started.</p>
@@ -182,6 +324,10 @@ export default function Home() {
           </li>
         ))}
       </ul>
+        </>
+      )}
+
+      {error && !user && <p style={{ color: 'red' }}>{error}</p>}
     </main>
   );
 }
