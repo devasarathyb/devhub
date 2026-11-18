@@ -1,0 +1,27 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export default function Home() {
+  const [apiStatus, setApiStatus] = useState('Checking the Express API...');
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`API responded with status ${response.status}`);
+        }
+        const data: { message: string } = await response.json();
+        setApiStatus(data.message);
+      })
+      .catch(() => setApiStatus('Could not connect to the Express API.'));
+  }, []);
+
+  return (
+    <main style={{ maxWidth: 640, margin: '40px auto', padding: 20 }}>
+      <h1><%= appName %></h1>
+      <p>Next.js frontend is running.</p>
+      <p>API status: {apiStatus}</p>
+    </main>
+  );
+}

@@ -1,0 +1,15 @@
+{
+  "generators": {
+    "preset": {
+      "factory": "./dist/generators/workspace/generator",
+      "schema": "./dist/generators/workspace/schema.json",
+      "description": "Create a DevHub Nx workspace",
+      "x-use-standalone-layout": true
+    },
+    "application": {
+      "factory": "./dist/generators/application/application",
+      "schema": "./dist/generators/application/schema.json",
+      "description": "application generator"
+    }
+  }
+}

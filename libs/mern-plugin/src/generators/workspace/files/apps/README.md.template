@@ -1,0 +1,10 @@
+# Applications in <%= name %>
+
+Generate applications in this workspace with the DevHub Nx plugin:
+
+```powershell
+pnpm nx g @devhub/mern-plugin:application my-app --type=fullstack
+```
+
+Choose `frontend`, `backend`, or `fullstack`. The generator adds dependencies
+for the selected application type.

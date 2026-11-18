@@ -1,0 +1,42 @@
+{
+  "name": "<%= projectName %>",
+  "private": true,
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/esbuild:esbuild",
+        "outputs": ["{options.outputPath}"],
+        "options": {
+          "platform": "node",
+          "outputPath": "dist/apps/<%= projectName %>",
+          "format": ["cjs"],
+          "bundle": false,
+          "main": "apps/<%= projectName %>/src/main.ts",
+          "tsConfig": "apps/<%= projectName %>/tsconfig.app.json"
+        },
+        "configurations": {
+          "development": {},
+          "production": {
+            "esbuildOptions": {
+              "sourcemap": false
+            }
+          }
+        }
+      },
+      "serve": {
+        "continuous": true,
+        "executor": "@nx/js:node",
+        "dependsOn": ["build"],
+        "options": {
+          "buildTarget": "<%= projectName %>:build",
+          "runBuildTargetDependencies": false
+        },
+        "configurations": {
+          "development": {
+            "buildTarget": "<%= projectName %>:build:development"
+          }
+        }
+      }
+    }
+  }
+}

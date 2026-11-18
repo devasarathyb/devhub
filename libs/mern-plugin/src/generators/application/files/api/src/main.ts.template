@@ -1,0 +1,29 @@
+import express from 'express';
+import { config as loadEnv } from 'dotenv';
+import { resolve } from 'node:path';
+import { connectToDatabase } from './database';
+
+loadEnv({ path: resolve(process.cwd(), 'apps/<%= projectName %>/.env') });
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+
+app.get('/api/health', (_request, response) => {
+  response.json({ status: 'ok', message: 'Express API is running' });
+});
+
+async function startServer() {
+  try {
+    await connectToDatabase();
+    app.listen(port, () => {
+      console.log(`API running at http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start API:', error);
+    process.exit(1);
+  }
+}
+
+void startServer();

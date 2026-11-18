@@ -1,0 +1,37 @@
+{
+  "name": "create-devhub-workspace",
+  "version": "0.0.1",
+  "type": "module",
+  "module": "./dist/index.js",
+  "files": [
+    "dist",
+    "!**/*.tsbuildinfo"
+  ],
+  "nx": {
+    "targets": {
+      "build": {
+        "executor": "@nx/js:tsc",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "libs/workspace-generator/dist",
+          "main": "libs/workspace-generator/bin/index.ts",
+          "tsConfig": "libs/workspace-generator/tsconfig.lib.json",
+          "generatePackageJson": false
+        }
+      }
+    },
+    "sourceRoot": "libs/workspace-generator/bin",
+    "implicitDependencies": [
+      "@devhub/mern-plugin"
+    ]
+  },
+  "dependencies": {
+    "create-nx-workspace": "23.3.0",
+    "tslib": "^2.3.0"
+  },
+  "bin": {
+    "create-devhub-workspace": "./dist/bin/index.js"
+  }
+}
